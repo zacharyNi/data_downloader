@@ -110,11 +110,15 @@ def parseCommand(command):
         interval = 1
     
     #get final collectors
-    collectors = collector.split(",")
-    chosen_collectors=[]
-    for c in collectors:
-        if c.lower() in routeViews_Collector_list or c.lower() in RIPE_collector_list:
-            chosen_collectors.append(c.lower())
+    if collector == "all":
+        chosen_collectors=routeViews_Collector_list+RIPE_collector_list
+    else:
+        collectors = collector.split(",")
+        chosen_collectors=[]
+        for c in collectors:
+            if c.lower() in routeViews_Collector_list or c.lower() in RIPE_collector_list:
+                chosen_collectors.append(c.lower())
+    
     #get type
     if datatype.upper() == "RIBS":
         datatype="RIBS"
