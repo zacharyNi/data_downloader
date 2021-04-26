@@ -57,6 +57,9 @@ class BgpDump:
         self.new_state = 0
 
     def print_line(self, prefix, next_hop):
+        cp = configparser.ConfigParser()
+        cp.read('config/parseMRT.ini')
+        as_path_only = cp.get('init','AS_PATH_ONLY')
         if self.ts_format == 'dump':
             d = self.ts
         else:
@@ -71,35 +74,44 @@ class BgpDump:
             d = '%d|%s' % (self.num, d)
 
         if self.flag == 'B' or self.flag == 'A':
-            self.output.write(
-                '%s|%s|%s|%s|%s|%s|%s|%s' % (
-                    self.type, d, self.flag, self.peer_ip, self.peer_as, prefix,
-                    self.merge_as_path(), self.origin
-                )
-            )
-            if self.verbose == True:
+            if as_path_only == 0:
                 self.output.write(
-                    '|%s|%d|%d|%s|%s|%s|\n' % (
-                        next_hop, self.local_pref, self.med, self.comm,
-                        self.atomic_aggr, self.merge_aggr()
+                    '%s|%s|%s|%s|%s|%s|%s|%s' % (
+                        self.type, d, self.flag, self.peer_ip, self.peer_as, prefix,
+                        self.merge_as_path(), self.origin
+                    )
+                )
+                if self.verbose == True:
+                    self.output.write(
+                        '|%s|%d|%d|%s|%s|%s|\n' % (
+                            next_hop, self.local_pref, self.med, self.comm,
+                            self.atomic_aggr, self.merge_aggr()
+                        )
+                    )
+                else:
+                    self.output.write('\n')
+            else:
+                self.output.write('%s\n'%(self.merge_as_path()))
+        elif self.flag == 'W':
+            if as_path_only==0:
+                self.output.write(
+                    '%s|%s|%s|%s|%s|%s\n' % (
+                        self.type, d, self.flag, self.peer_ip, self.peer_as,
+                        prefix
                     )
                 )
             else:
-                self.output.write('\n')
-        elif self.flag == 'W':
-            self.output.write(
-                '%s|%s|%s|%s|%s|%s\n' % (
-                    self.type, d, self.flag, self.peer_ip, self.peer_as,
-                    prefix
-                )
-            )
+                pass
         elif self.flag == 'STATE':
-            self.output.write(
-                '%s|%s|%s|%s|%s|%d|%d\n' % (
-                    self.type, d, self.flag, self.peer_ip, self.peer_as,
-                    self.old_state, self.new_state
+            if as_path_only==0:
+                self.output.write(
+                    '%s|%s|%s|%s|%s|%d|%d\n' % (
+                        self.type, d, self.flag, self.peer_ip, self.peer_as,
+                        self.old_state, self.new_state
+                    )
                 )
-            )
+            else:
+                pass
 
     def print_routes(self):
         for withdrawn in self.withdrawn:

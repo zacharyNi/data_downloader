@@ -19,10 +19,12 @@ cp = configparser.ConfigParser()
 cp.read('config/collector_list.ini')
 
 routeViews="http://archive.routeviews.org/"
-routeViews_Collector_list=cp.get('collector_list','RouteViews')
+routeViews_Collectors=cp.get('collector_list','RouteViews')
+routeViews_Collector_list=json.loads(routeViews_Collectors)
 
 RIPE="http://data.ris.ripe.net/"
-RIPE_collector_list=cp.get('collector_list','RIPE')
+RIPE_collectors=cp.get('collector_list','RIPE')
+RIPE_collector_list=json.loads(RIPE_collectors)
 
 class DownloadThread(threading.Thread):
 	def __init__(self, q, destfolder):
@@ -41,7 +43,7 @@ class DownloadThread(threading.Thread):
 
 	def download_url(self,url):
 		vantage_folder=self.destfolder
-		name=str(url.split('/')[-1])
+		name=str(url.split('/')[4])+str("_")+str(url.split('/')[-1])
 		destination="./"+vantage_folder+"/"+name
 		print(destination)
 		r=requests.get(url, allow_redirects=True)
@@ -132,12 +134,12 @@ def findElement(base_url, pattern_str):
     bs4_parser = "html.parser"
     try:
         response = urllib.request.urlopen(base_url)
+        html = BeautifulSoup(response.read(), bs4_parser)
+        for link in html.findAll('a',text=re.compile(pattern_str)):
+            sources.append(link['href'])
+        response.close()
     except urllib.error.HTTPError:
-        print("we dont have such data!")
-        sys.exit()
-    html = BeautifulSoup(response.read(), bs4_parser)
-    for link in html.findAll('a',text=re.compile(pattern_str)):
-        sources.append(link['href'])
+        print(base_url + " dont have such data!") 
     return sources
 
 def live_mode():
@@ -188,7 +190,7 @@ if __name__=='__main__':
                 base_url = routeViews + cc + "/bgpdata"
             else:
                 base_url = RIPE + cc + "/"
-
+            
             sources = findElement(base_url, '^(((?:19|20)\d\d).(0?[1-9]|1[0-2]))')
             times=[]
             for s in sources:
@@ -207,7 +209,7 @@ if __name__=='__main__':
                     selected_times.append(t)
             
             if len(selected_times)==0:
-                print("we dont have such data in your start_time and end_time")
+                print(cc+" dont have such data in your start_time and end_time")
                 continue
 
             selected_packages=[]
@@ -283,8 +285,9 @@ if __name__=='__main__':
             print("finish %d / %d"%(i,len(dirlist)))
         print("done!")
 
-#route-views.eqix ribs 2017-05-30-11:10 2017-05-30-14:10
-#route-views.eqix,rrc15 updates 2016-05-30-14:00 2016-05-30-15:00
+#route-views.eqix ribs 2021-04-01-14:00 2021-04-01-15:00
+#route-views.eqix,rrc15 updates 2021-04-01-14:00 2021-04-01-15:00
+#all ribs 2021-04-01-20:00 2021-04-01-23:00
 
 #W withdrawl
 #A announce
