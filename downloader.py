@@ -271,23 +271,27 @@ if __name__=='__main__':
             path_to_write = str(folder_name) + '/result/' + str(name) + str(".txt")
             r = Reader(path_to_file)   
             count = 0
+            #q1
+            b = BgpDump(path_to_write)
             for m in r:
                 if m.err:
                     continue
-                b = BgpDump(path_to_write)
                 if m.data['type'][0] == MRT_T['TABLE_DUMP']:
                     b.td(m.data, count)
                 elif m.data['type'][0] == MRT_T['TABLE_DUMP_V2']:
                     b.td_v2(m.data)
                 elif m.data['type'][0] == MRT_T['BGP4MP']:
                     b.bgp4mp(m.data, count)
+                b.clear()
                 count += 1
+            b.close()
             print("finish %d / %d"%(i,len(dirlist)))
         print("done!")
 
-#route-views.eqix ribs 2021-04-01-14:00 2021-04-01-15:00
-#route-views.eqix,rrc15 updates 2021-04-01-14:00 2021-04-01-15:00
-#all ribs 2021-04-01-20:00 2021-04-01-23:00
+#route-views.eqix ribs 2021-07-12-06:00 2021-06-19-10:00
+#rrc15 updates 2015-04-01-14:00 2015-04-01-14:30
+#all ribs 2021-03-01-20:00 2021-03-01-23:00
+# rrc03 ribs 2021-07-12-12:00 2021-07-12-18:00
 
 #W withdrawl
 #A announce

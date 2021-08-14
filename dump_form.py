@@ -17,7 +17,7 @@ class BgpDump:
         cp = configparser.ConfigParser()
         cp.read('config/parseMRT.ini')
         verbose = cp.get('init','verbose')
-        if verbose==0:
+        if verbose=='0':
             self.verbose = False
         else:
             self.verbose = True
@@ -30,7 +30,7 @@ class BgpDump:
         else:
             self.ts_format = 'change'
         pkt_num = cp.get('init','pkt_num')
-        if pkt_num==0:
+        if pkt_num=='0':
             self.pkt_num = False
         else:
             self.pkt_num = True
@@ -56,10 +56,27 @@ class BgpDump:
         self.old_state = 0
         self.new_state = 0
 
+    def close(self):
+        self.output.close()
+    
+    def clear(self):
+        self.type = ''
+        self.flag = ''
+        self.peer_ip = ''
+        self.peer_as = 0
+        self.nlri = []
+        self.withdrawn = []
+        self.as_path = []
+        self.origin = ''
+        self.next_hop = []
+        self.as4_path = []
+        self.as4_aggr = ''
+
     def print_line(self, prefix, next_hop):
         cp = configparser.ConfigParser()
         cp.read('config/parseMRT.ini')
         as_path_only = cp.get('init','AS_PATH_ONLY')
+        prefix_and_origin = cp.get('init','PREFIX_AND_ORIGIN')
         if self.ts_format == 'dump':
             d = self.ts
         else:
@@ -74,26 +91,30 @@ class BgpDump:
             d = '%d|%s' % (self.num, d)
 
         if self.flag == 'B' or self.flag == 'A':
-            if as_path_only == 0:
-                self.output.write(
-                    '%s|%s|%s|%s|%s|%s|%s|%s' % (
-                        self.type, d, self.flag, self.peer_ip, self.peer_as, prefix,
-                        self.merge_as_path(), self.origin
-                    )
-                )
-                if self.verbose == True:
+            if as_path_only == '0':
+                if prefix_and_origin == '0':
                     self.output.write(
-                        '|%s|%d|%d|%s|%s|%s|\n' % (
-                            next_hop, self.local_pref, self.med, self.comm,
-                            self.atomic_aggr, self.merge_aggr()
+                        '%s|%s|%s|%s|%s|%s|%s|%s' % (
+                            self.type, d, self.flag, self.peer_ip, self.peer_as, prefix,
+                            self.merge_as_path(), self.origin
                         )
                     )
+                    if self.verbose == True:
+                        self.output.write(
+                            '|%s|%d|%d|%s|%s|%s|\n' % (
+                                next_hop, self.local_pref, self.med, self.comm,
+                                self.atomic_aggr, self.merge_aggr()
+                            )
+                        )
+                    else:
+                        self.output.write('\n')
                 else:
-                    self.output.write('\n')
+                    origin_as = self.merge_as_path().split(' ')[-1]
+                    self.output.write('%s|%s\n' %(prefix, origin_as))
             else:
                 self.output.write('%s\n'%(self.merge_as_path()))
         elif self.flag == 'W':
-            if as_path_only==0:
+            if as_path_only=='0' and prefix_and_origin=='0':
                 self.output.write(
                     '%s|%s|%s|%s|%s|%s\n' % (
                         self.type, d, self.flag, self.peer_ip, self.peer_as,
@@ -103,7 +124,7 @@ class BgpDump:
             else:
                 pass
         elif self.flag == 'STATE':
-            if as_path_only==0:
+            if as_path_only=='0' and prefix_and_origin=='0':
                 self.output.write(
                     '%s|%s|%s|%s|%s|%d|%d\n' % (
                         self.type, d, self.flag, self.peer_ip, self.peer_as,
